@@ -6,7 +6,7 @@ const facetAddresses = new Map([
     ['DiamondCutFacet', '0xED5B6c65140FA8681c3DFf6BA5EFDb7334dff870'],
     ['DiamondLoupeFacet', '0x2bC15AC06bB13059322415CBE2FF80c34Bd1d703'],
     ['OwnershipFacet', '0x85cC2f131015bbc6B22bd95597468e08aD6725E8'],
-    ['BarnFacet', '0x15075fABB6A60C966637A3b500DA74E71520c060'],
+    ['SupernovaFacet', '0x15075fABB6A60C966637A3b500DA74E71520c060'],
 ]);
 
 async function getFacets (): Promise<Contract[]> {

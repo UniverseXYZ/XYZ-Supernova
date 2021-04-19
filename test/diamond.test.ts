@@ -20,7 +20,7 @@ describe('Diamond', function () {
         loupeFacet = await deploy.deployContract('DiamondLoupeFacet');
         ownershipFacet = await deploy.deployContract('OwnershipFacet');
         diamond = await deploy.deployDiamond(
-            'Barn',
+            'Supernova',
             [cutFacet, loupeFacet, ownershipFacet],
             await owner.getAddress(),
         );

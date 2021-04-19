@@ -13,7 +13,7 @@
       },
       {
         "internalType": "address",
-        "name": "_barn",
+        "name": "_supernova",
         "type": "address"
       }
     ],
@@ -73,19 +73,6 @@
         "internalType": "uint256",
         "name": "",
         "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "barn",
-    "outputs": [
-      {
-        "internalType": "contract IBarn",
-        "name": "",
-        "type": "address"
       }
     ],
     "stateMutability": "view",
@@ -245,11 +232,11 @@
     "inputs": [
       {
         "internalType": "address",
-        "name": "_barn",
+        "name": "_supernova",
         "type": "address"
       }
     ],
-    "name": "setBarn",
+    "name": "setSupernova",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -280,6 +267,19 @@
     "name": "setupPullToken",
     "outputs": [],
     "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "supernova",
+    "outputs": [
+      {
+        "internalType": "contract ISupernova",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
     "type": "function"
   },
   {

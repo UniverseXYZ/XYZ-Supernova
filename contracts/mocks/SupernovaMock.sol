@@ -3,7 +3,7 @@ pragma solidity 0.7.6;
 
 import "../interfaces/IRewards.sol";
 
-contract BarnMock {
+contract SupernovaMock {
     IRewards public r;
     uint256 public bondStaked;
     mapping(address => uint256) private balances;

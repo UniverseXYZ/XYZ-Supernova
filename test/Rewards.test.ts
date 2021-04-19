@@ -3,7 +3,7 @@ import { BigNumber, Signer } from 'ethers';
 import * as helpers from './helpers/helpers';
 import * as time from './helpers/time';
 import { expect } from 'chai';
-import { BarnMock, Erc20Mock, Rewards } from '../typechain';
+import { SupernovaMock, Erc20Mock, Rewards } from '../typechain';
 import * as deploy from './helpers/deploy';
 
 const zeroAddress = '0x0000000000000000000000000000000000000000';
@@ -11,7 +11,7 @@ const zeroAddress = '0x0000000000000000000000000000000000000000';
 describe('Rewards', function () {
     const amount = BigNumber.from(100).mul(BigNumber.from(10).pow(18));
 
-    let barn: BarnMock, bond: Erc20Mock, rewards: Rewards;
+    let supernova: SupernovaMock, bond: Erc20Mock, rewards: Rewards;
 
     let user: Signer, userAddress: string;
     let happyPirate: Signer, happyPirateAddress: string;
@@ -29,14 +29,14 @@ describe('Rewards', function () {
         await setupSigners();
         await setupContracts();
 
-        barn = (await deploy.deployContract('BarnMock')) as BarnMock;
+        supernova = (await deploy.deployContract('SupernovaMock')) as SupernovaMock;
 
         rewards = (await deploy.deployContract(
             'Rewards',
-            [await treasury.getAddress(), bond.address, barn.address])
+            [await treasury.getAddress(), bond.address, supernova.address])
         ) as Rewards;
 
-        await barn.setRewards(rewards.address);
+        await supernova.setRewards(rewards.address);
     });
 
     beforeEach(async function () {
@@ -124,19 +124,19 @@ describe('Rewards', function () {
             ).to.be.revertedWith('contract is disabled');
         });
 
-        it('can set barn address if called by owner', async function () {
-            await expect(rewards.connect(happyPirate).setBarn(barn.address))
+        it('can set supernova address if called by owner', async function () {
+            await expect(rewards.connect(happyPirate).setSupernova(supernova.address))
                 .to.be.revertedWith('!owner');
 
-            await expect(rewards.connect(treasury).setBarn(flyingParrotAddress))
+            await expect(rewards.connect(treasury).setSupernova(flyingParrotAddress))
                 .to.not.be.reverted;
 
-            expect(await rewards.barn()).to.equal(flyingParrotAddress);
+            expect(await rewards.supernova()).to.equal(flyingParrotAddress);
         });
 
-        it('reverts if setBarn called with 0x0', async function () {
-            await expect(rewards.connect(treasury).setBarn(helpers.zeroAddress))
-                .to.be.revertedWith('barn address must not be 0x0');
+        it('reverts if setSupernova called with 0x0', async function () {
+            await expect(rewards.connect(treasury).setSupernova(helpers.zeroAddress))
+                .to.be.revertedWith('supernova address must not be 0x0');
         });
     });
 
@@ -145,7 +145,7 @@ describe('Rewards', function () {
             expect(await rewards.currentMultiplier()).to.equal(0);
 
             await bond.mint(rewards.address, amount);
-            await barn.deposit(happyPirateAddress, amount);
+            await supernova.deposit(happyPirateAddress, amount);
 
             await expect(rewards.ackFunds()).to.not.be.reverted;
 
@@ -161,7 +161,7 @@ describe('Rewards', function () {
 
         it('does not change multiplier on funds balance decrease but changes balance', async function () {
             await bond.mint(rewards.address, amount);
-            await barn.deposit(happyPirateAddress, amount);
+            await supernova.deposit(happyPirateAddress, amount);
 
             await expect(rewards.ackFunds()).to.not.be.reverted;
             expect(await rewards.currentMultiplier()).to.equal(helpers.tenPow18);
@@ -182,17 +182,17 @@ describe('Rewards', function () {
     });
 
     describe('registerUserAction', function () {
-        it('can only be called by barn', async function () {
+        it('can only be called by supernova', async function () {
             await expect(rewards.connect(happyPirate).registerUserAction(flyingParrotAddress))
-                .to.be.revertedWith('only callable by barn');
+                .to.be.revertedWith('only callable by supernova');
 
-            await barn.deposit(happyPirateAddress, amount);
+            await supernova.deposit(happyPirateAddress, amount);
 
-            await expect(barn.callRegisterUserAction(happyPirateAddress)).to.not.be.reverted;
+            await expect(supernova.callRegisterUserAction(happyPirateAddress)).to.not.be.reverted;
         });
 
         it('does not pull bond if function is disabled', async function () {
-            await barn.callRegisterUserAction(happyPirateAddress);
+            await supernova.callRegisterUserAction(happyPirateAddress);
 
             expect(await bond.balanceOf(rewards.address)).to.equal(0);
 
@@ -201,10 +201,10 @@ describe('Rewards', function () {
             const startAt = await helpers.getLatestBlockTimestamp();
             const endsAt = startAt + 60 * 60 * 24 * 7;
             await rewards.connect(treasury).setupPullToken(await communityVault.getAddress(), startAt, endsAt, amount);
-            await barn.deposit(happyPirateAddress, amount);
+            await supernova.deposit(happyPirateAddress, amount);
 
             await helpers.moveAtTimestamp(startAt + time.day);
-            await barn.callRegisterUserAction(happyPirateAddress);
+            await supernova.callRegisterUserAction(happyPirateAddress);
 
             // total time is 7 days & total amount is 100  => 1 day worth of rewards ~14.28
             const balance = await bond.balanceOf(rewards.address);
@@ -217,12 +217,12 @@ describe('Rewards', function () {
 
             await helpers.moveAtTimestamp(end + 1 * time.day);
 
-            await barn.callRegisterUserAction(happyPirateAddress);
+            await supernova.callRegisterUserAction(happyPirateAddress);
 
             expect(await bond.balanceOf(rewards.address)).to.equal(amount);
 
             await helpers.moveAtTimestamp(end + 1 * time.day);
-            await barn.callRegisterUserAction(happyPirateAddress);
+            await supernova.callRegisterUserAction(happyPirateAddress);
 
             expect(await bond.balanceOf(rewards.address)).to.equal(amount);
         });
@@ -230,7 +230,7 @@ describe('Rewards', function () {
         it('updates the amount owed to user but does not send funds', async function () {
             await bond.connect(communityVault).approve(rewards.address, amount);
 
-            await barn.deposit(happyPirateAddress, amount);
+            await supernova.deposit(happyPirateAddress, amount);
 
             await helpers.moveAtTimestamp(defaultStartAt + time.day);
 
@@ -250,7 +250,7 @@ describe('Rewards', function () {
         it('transfers the amount to user', async function () {
             const { start, end } = await setupRewards();
 
-            await barn.deposit(happyPirateAddress, amount);
+            await supernova.deposit(happyPirateAddress, amount);
             const depositTs = await helpers.getLatestBlockTimestamp();
 
             const expectedBalance1 = calcTotalReward(start, depositTs, end - start, amount);
@@ -271,19 +271,19 @@ describe('Rewards', function () {
         it('works with multiple users', async function () {
             const { start, end } = await setupRewards();
 
-            await barn.deposit(happyPirateAddress, amount);
+            await supernova.deposit(happyPirateAddress, amount);
             const deposit1Ts = await helpers.getLatestBlockTimestamp();
             const expectedBalance1 = calcTotalReward(start, deposit1Ts, end - start, amount);
 
             expect(await bond.balanceOf(rewards.address)).to.equal(expectedBalance1);
 
-            await barn.deposit(flyingParrotAddress, amount);
+            await supernova.deposit(flyingParrotAddress, amount);
             const deposit2Ts = await helpers.getLatestBlockTimestamp();
             const expectedBalance2 = calcTotalReward(deposit1Ts, deposit2Ts, end - start, amount);
 
             expect(await bond.balanceOf(rewards.address)).to.equal(expectedBalance1.add(expectedBalance2));
 
-            await barn.deposit(userAddress, amount);
+            await supernova.deposit(userAddress, amount);
             const deposit3Ts = await helpers.getLatestBlockTimestamp();
             const expectedBalance3 = calcTotalReward(deposit2Ts, deposit3Ts, end - start, amount);
 
@@ -302,20 +302,20 @@ describe('Rewards', function () {
         it('works fine after claim', async function () {
             const { start, end } = await setupRewards();
 
-            await barn.deposit(happyPirateAddress, amount);
+            await supernova.deposit(happyPirateAddress, amount);
             const deposit1Ts = await helpers.getLatestBlockTimestamp();
             const expectedBalance1 = calcTotalReward(start, deposit1Ts, end - start, amount);
 
             expect(await bond.balanceOf(rewards.address)).to.equal(expectedBalance1);
 
-            await barn.deposit(flyingParrotAddress, amount);
+            await supernova.deposit(flyingParrotAddress, amount);
             const deposit2Ts = await helpers.getLatestBlockTimestamp();
             const multiplierAtDeposit2 = await rewards.currentMultiplier();
             const expectedBalance2 = calcTotalReward(deposit1Ts, deposit2Ts, end - start, amount);
 
             expect(await bond.balanceOf(rewards.address)).to.equal(expectedBalance1.add(expectedBalance2));
 
-            await barn.deposit(userAddress, amount);
+            await supernova.deposit(userAddress, amount);
             const deposit3Ts = await helpers.getLatestBlockTimestamp();
             const expectedBalance3 = calcTotalReward(deposit2Ts, deposit3Ts, end - start, amount);
 

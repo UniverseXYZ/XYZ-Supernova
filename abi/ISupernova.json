@@ -249,7 +249,7 @@
             "type": "address"
           }
         ],
-        "internalType": "struct LibBarnStorage.Stake",
+        "internalType": "struct LibSupernovaStorage.Stake",
         "name": "",
         "type": "tuple"
       }

@@ -337,7 +337,7 @@
         "type": "address"
       }
     ],
-    "name": "initBarn",
+    "name": "initSupernova",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -436,7 +436,7 @@
             "type": "address"
           }
         ],
-        "internalType": "struct LibBarnStorage.Stake",
+        "internalType": "struct LibSupernovaStorage.Stake",
         "name": "",
         "type": "tuple"
       }

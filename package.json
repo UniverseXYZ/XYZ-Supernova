@@ -1,5 +1,5 @@
 {
-  "name": "barnbridge-dao",
+  "name": "kek-dao",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
@@ -14,7 +14,7 @@
     "lint:ts:fix": "eslint . --ext .ts --fix",
     "lint:sol": "solhint --max-warnings 0 \"contracts/**/*.sol\""
   },
-  "author": "BarnBridge",
+  "author": "kek-dao",
   "license": "Apache-2",
   "devDependencies": {
     "@nomiclabs/hardhat-ethers": "^2.0.0",

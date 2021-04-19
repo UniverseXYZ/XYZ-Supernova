@@ -1,6 +1,6 @@
 # Test results
 ```shell
-  Barn
+  Supernova
     General tests
       ✓ should be deployed
     deposit
@@ -99,13 +99,13 @@
       ✓ sets correct owner
       ✓ can set pullTokenFrom if called by owner
       ✓ sanitizes the parameters on call to setPullToken (143ms)
-      ✓ can set barn address if called by owner
-      ✓ reverts if setBarn called with 0x0
+      ✓ can set supernova address if called by owner
+      ✓ reverts if setSupernova called with 0x0
     ackFunds
       ✓ calculates the new multiplier when funds are added (91ms)
       ✓ does not change multiplier on funds balance decrease but changes balance (116ms)
     registerUserAction
-      ✓ can only be called by barn (49ms)
+      ✓ can only be called by supernova (49ms)
       ✓ does not pull bond if function is disabled (120ms)
       ✓ does not pull bond if already pulled everything (89ms)
       ✓ updates the amount owed to user but does not send funds (49ms)
@@ -122,23 +122,23 @@
 File                     |  % Stmts | % Branch |  % Funcs |  % Lines |Uncovered Lines |
 -------------------------|----------|----------|----------|----------|----------------|
  contracts/              |      100 |       94 |      100 |      100 |                |
-  Barn.sol               |      100 |       75 |      100 |      100 |                |
+  Supernova.sol               |      100 |       75 |      100 |      100 |                |
   Rewards.sol            |      100 |    95.65 |      100 |      100 |                |
  contracts/facets/       |    99.05 |    93.75 |    97.22 |     99.1 |                |
-  BarnFacet.sol          |      100 |    94.12 |      100 |      100 |                |
+  SupernovaFacet.sol          |      100 |    94.12 |      100 |      100 |                |
   ChangeRewardsFacet.sol |      100 |      100 |      100 |      100 |                |
   DiamondCutFacet.sol    |      100 |      100 |      100 |      100 |                |
   DiamondLoupeFacet.sol  |       96 |    91.67 |       80 |    96.77 |        159,160 |
   OwnershipFacet.sol     |      100 |      100 |      100 |      100 |                |
  contracts/interfaces/   |      100 |      100 |      100 |      100 |                |
-  IBarn.sol              |      100 |      100 |      100 |      100 |                |
+  ISupernova.sol              |      100 |      100 |      100 |      100 |                |
   IDiamondCut.sol        |      100 |      100 |      100 |      100 |                |
   IDiamondLoupe.sol      |      100 |      100 |      100 |      100 |                |
   IERC165.sol            |      100 |      100 |      100 |      100 |                |
   IERC173.sol            |      100 |      100 |      100 |      100 |                |
   IRewards.sol           |      100 |      100 |      100 |      100 |                |
  contracts/libraries/    |    85.71 |    47.92 |    92.31 |    85.71 |                |
-  LibBarnStorage.sol     |      100 |      100 |      100 |      100 |                |
+  LibSupernovaStorage.sol     |      100 |      100 |      100 |      100 |                |
   LibDiamond.sol         |       85 |    45.24 |      100 |    85.94 |... 152,154,156 |
   LibDiamondStorage.sol  |      100 |      100 |      100 |      100 |                |
   LibOwnership.sol       |     87.5 |    66.67 |       75 |    77.78 |          30,31 |

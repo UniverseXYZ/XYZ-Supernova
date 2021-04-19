@@ -5,7 +5,7 @@ pragma experimental ABIEncoderV2;
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "./interfaces/IBarn.sol";
+import "./interfaces/ISupernova.sol";
 
 contract Rewards is Ownable {
     using SafeMath for uint256;
@@ -30,26 +30,26 @@ contract Rewards is Ownable {
     mapping(address => uint256) public userMultiplier;
     mapping(address => uint256) public owed;
 
-    IBarn public barn;
+    ISupernova public supernova;
     IERC20 public rewardToken;
 
     event Claim(address indexed user, uint256 amount);
 
-    constructor(address _owner, address _token, address _barn) {
+    constructor(address _owner, address _token, address _supernova) {
         require(_token != address(0), "reward token must not be 0x0");
-        require(_barn != address(0), "barn address must not be 0x0");
+        require(_supernova != address(0), "supernova address must not be 0x0");
 
         transferOwnership(_owner);
 
         rewardToken = IERC20(_token);
-        barn = IBarn(_barn);
+        supernova = ISupernova(_supernova);
     }
 
-    // registerUserAction is called by the Barn every time the user does a deposit or withdrawal in order to
+    // registerUserAction is called by the Supernova every time the user does a deposit or withdrawal in order to
     // account for the changes in reward that the user should get
     // it updates the amount owed to the user without transferring the funds
     function registerUserAction(address user) public {
-        require(msg.sender == address(barn), 'only callable by barn');
+        require(msg.sender == address(supernova), 'only callable by supernova');
 
         _calculateOwed(user);
     }
@@ -84,7 +84,7 @@ contract Rewards is Ownable {
             return;
         }
 
-        uint256 totalStakedBond = barn.bondStaked();
+        uint256 totalStakedBond = supernova.bondStaked();
         // if there's no bond staked, it doesn't make sense to ackFunds because there's nobody to distribute them to
         // and the calculation would fail anyways due to division by 0
         if (totalStakedBond == 0) {
@@ -131,12 +131,12 @@ contract Rewards is Ownable {
         }
     }
 
-    // setBarn sets the address of the BarnBridge Barn into the state variable
-    function setBarn(address _barn) public {
-        require(_barn != address(0), 'barn address must not be 0x0');
+    // setSupernova sets the address of the Kek Supernova into the state variable
+    function setSupernova(address _supernova) public {
+        require(_supernova != address(0), 'supernova address must not be 0x0');
         require(msg.sender == owner(), '!owner');
 
-        barn = IBarn(_barn);
+        supernova = ISupernova(_supernova);
     }
 
     // _pullToken calculates the amount based on the time passed since the last pull relative
@@ -185,6 +185,6 @@ contract Rewards is Ownable {
     function _userPendingReward(address user) internal view returns (uint256) {
         uint256 multiplier = currentMultiplier.sub(userMultiplier[user]);
 
-        return barn.balanceOf(user).mul(multiplier).div(decimals);
+        return supernova.balanceOf(user).mul(multiplier).div(decimals);
     }
 }

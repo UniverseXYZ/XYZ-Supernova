@@ -2,13 +2,13 @@
 pragma solidity 0.7.6;
 pragma experimental ABIEncoderV2;
 
-import "../interfaces/IBarn.sol";
-import "../libraries/LibBarnStorage.sol";
+import "../interfaces/ISupernova.sol";
+import "../libraries/LibSupernovaStorage.sol";
 import "../libraries/LibOwnership.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-contract BarnFacet {
+contract SupernovaFacet {
     using SafeMath for uint256;
 
     uint256 constant public MAX_LOCK = 365 days;
@@ -21,12 +21,12 @@ contract BarnFacet {
     event DelegatedPowerIncreased(address indexed from, address indexed to, uint256 amount, uint256 to_newDelegatedPower);
     event DelegatedPowerDecreased(address indexed from, address indexed to, uint256 amount, uint256 to_newDelegatedPower);
 
-    function initBarn(address _bond, address _rewards) public {
+    function initSupernova(address _bond, address _rewards) public {
         require(_bond != address(0), "BOND address must not be 0x0");
 
-        LibBarnStorage.Storage storage ds = LibBarnStorage.barnStorage();
+        LibSupernovaStorage.Storage storage ds = LibSupernovaStorage.supernovaStorage();
 
-        require(!ds.initialized, "Barn: already initialized");
+        require(!ds.initialized, "Supernova: already initialized");
         LibOwnership.enforceIsContractOwner();
 
         ds.initialized = true;
@@ -39,7 +39,7 @@ contract BarnFacet {
     function deposit(uint256 amount) public {
         require(amount > 0, "Amount must be greater than 0");
 
-        LibBarnStorage.Storage storage ds = LibBarnStorage.barnStorage();
+        LibSupernovaStorage.Storage storage ds = LibSupernovaStorage.supernovaStorage();
         uint256 allowance = ds.bond.allowance(msg.sender, address(this));
         require(allowance >= amount, "Token allowance too small");
 
@@ -74,7 +74,7 @@ contract BarnFacet {
         uint256 balance = balanceOf(msg.sender);
         require(balance >= amount, "Insufficient balance");
 
-        LibBarnStorage.Storage storage ds = LibBarnStorage.barnStorage();
+        LibSupernovaStorage.Storage storage ds = LibSupernovaStorage.supernovaStorage();
 
         // this must be called before the user's balance is updated so the rewards contract can calculate
         // the amount owed correctly
@@ -104,9 +104,9 @@ contract BarnFacet {
         require(timestamp <= block.timestamp + MAX_LOCK, "Timestamp too big");
         require(balanceOf(msg.sender) > 0, "Sender has no balance");
 
-        LibBarnStorage.Storage storage ds = LibBarnStorage.barnStorage();
-        LibBarnStorage.Stake[] storage checkpoints = ds.userStakeHistory[msg.sender];
-        LibBarnStorage.Stake storage currentStake = checkpoints[checkpoints.length - 1];
+        LibSupernovaStorage.Storage storage ds = LibSupernovaStorage.supernovaStorage();
+        LibSupernovaStorage.Stake[] storage checkpoints = ds.userStakeHistory[msg.sender];
+        LibSupernovaStorage.Stake storage currentStake = checkpoints[checkpoints.length - 1];
 
         require(timestamp > currentStake.expiryTimestamp, "New timestamp lower than current lock timestamp");
 
@@ -127,7 +127,7 @@ contract BarnFacet {
         uint256 senderBalance = balanceOf(msg.sender);
         require(senderBalance > 0, "No balance to delegate");
 
-        LibBarnStorage.Storage storage ds = LibBarnStorage.barnStorage();
+        LibSupernovaStorage.Storage storage ds = LibSupernovaStorage.supernovaStorage();
 
         emit Delegate(msg.sender, to);
 
@@ -161,18 +161,18 @@ contract BarnFacet {
 
     // balanceAtTs returns the amount of BOND that the user currently staked (bonus NOT included)
     function balanceAtTs(address user, uint256 timestamp) public view returns (uint256) {
-        LibBarnStorage.Stake memory stake = stakeAtTs(user, timestamp);
+        LibSupernovaStorage.Stake memory stake = stakeAtTs(user, timestamp);
 
         return stake.amount;
     }
 
     // stakeAtTs returns the Stake object of the user that was valid at `timestamp`
-    function stakeAtTs(address user, uint256 timestamp) public view returns (LibBarnStorage.Stake memory) {
-        LibBarnStorage.Storage storage ds = LibBarnStorage.barnStorage();
-        LibBarnStorage.Stake[] storage stakeHistory = ds.userStakeHistory[user];
+    function stakeAtTs(address user, uint256 timestamp) public view returns (LibSupernovaStorage.Stake memory) {
+        LibSupernovaStorage.Storage storage ds = LibSupernovaStorage.supernovaStorage();
+        LibSupernovaStorage.Stake[] storage stakeHistory = ds.userStakeHistory[user];
 
         if (stakeHistory.length == 0 || timestamp < stakeHistory[0].timestamp) {
-            return LibBarnStorage.Stake(block.timestamp, 0, block.timestamp, address(0));
+            return LibSupernovaStorage.Stake(block.timestamp, 0, block.timestamp, address(0));
         }
 
         uint256 min = 0;
@@ -202,7 +202,7 @@ contract BarnFacet {
 
     // votingPowerAtTs returns the voting power (bonus included) + delegated voting power for a user at a point in time
     function votingPowerAtTs(address user, uint256 timestamp) public view returns (uint256) {
-        LibBarnStorage.Stake memory stake = stakeAtTs(user, timestamp);
+        LibSupernovaStorage.Stake memory stake = stakeAtTs(user, timestamp);
 
         uint256 ownVotingPower;
 
@@ -228,7 +228,7 @@ contract BarnFacet {
     // bondStakedAtTs returns the total raw amount of BOND users have deposited into the contract
     // it does not include any bonus
     function bondStakedAtTs(uint256 timestamp) public view returns (uint256) {
-        return _checkpointsBinarySearch(LibBarnStorage.barnStorage().bondStakedHistory, timestamp);
+        return _checkpointsBinarySearch(LibSupernovaStorage.supernovaStorage().bondStakedHistory, timestamp);
     }
 
     // delegatedPower returns the total voting power that a user received from other users
@@ -238,7 +238,7 @@ contract BarnFacet {
 
     // delegatedPowerAtTs returns the total voting power that a user received from other users at a point in time
     function delegatedPowerAtTs(address user, uint256 timestamp) public view returns (uint256) {
-        return _checkpointsBinarySearch(LibBarnStorage.barnStorage().delegatedPowerHistory[user], timestamp);
+        return _checkpointsBinarySearch(LibSupernovaStorage.supernovaStorage().delegatedPowerHistory[user], timestamp);
     }
 
     // same as multiplierAtTs but for the current block timestamp
@@ -249,28 +249,28 @@ contract BarnFacet {
     // multiplierAtTs calculates the multiplier at a given timestamp based on the user's stake a the given timestamp
     // it includes the decay mechanism
     function multiplierAtTs(address user, uint256 timestamp) public view returns (uint256) {
-        LibBarnStorage.Stake memory stake = stakeAtTs(user, timestamp);
+        LibSupernovaStorage.Stake memory stake = stakeAtTs(user, timestamp);
 
         return _stakeMultiplier(stake, timestamp);
     }
 
     // userLockedUntil returns the timestamp until the user's balance is locked
     function userLockedUntil(address user) public view returns (uint256) {
-        LibBarnStorage.Stake memory c = stakeAtTs(user, block.timestamp);
+        LibSupernovaStorage.Stake memory c = stakeAtTs(user, block.timestamp);
 
         return c.expiryTimestamp;
     }
 
     // userDelegatedTo returns the address to which a user delegated their voting power; address(0) if not delegated
     function userDelegatedTo(address user) public view returns (address) {
-        LibBarnStorage.Stake memory c = stakeAtTs(user, block.timestamp);
+        LibSupernovaStorage.Stake memory c = stakeAtTs(user, block.timestamp);
 
         return c.delegatedTo;
     }
 
     // _checkpointsBinarySearch executes a binary search on a list of checkpoints that's sorted chronologically
     // looking for the closest checkpoint that matches the specified timestamp
-    function _checkpointsBinarySearch(LibBarnStorage.Checkpoint[] storage checkpoints, uint256 timestamp) internal view returns (uint256) {
+    function _checkpointsBinarySearch(LibSupernovaStorage.Checkpoint[] storage checkpoints, uint256 timestamp) internal view returns (uint256) {
         if (checkpoints.length == 0 || timestamp < checkpoints[0].timestamp) {
             return 0;
         }
@@ -296,7 +296,7 @@ contract BarnFacet {
     }
 
     // _stakeMultiplier calculates the multiplier for the given stake at the given timestamp
-    function _stakeMultiplier(LibBarnStorage.Stake memory stake, uint256 timestamp) internal view returns (uint256) {
+    function _stakeMultiplier(LibSupernovaStorage.Stake memory stake, uint256 timestamp) internal view returns (uint256) {
         if (timestamp >= stake.expiryTimestamp) {
             return BASE_MULTIPLIER;
         }
@@ -312,16 +312,16 @@ contract BarnFacet {
     // _updateUserBalance manages an array of checkpoints
     // if there's already a checkpoint for the same timestamp, the amount is updated
     // otherwise, a new checkpoint is inserted
-    function _updateUserBalance(LibBarnStorage.Stake[] storage checkpoints, uint256 amount) internal {
+    function _updateUserBalance(LibSupernovaStorage.Stake[] storage checkpoints, uint256 amount) internal {
         if (checkpoints.length == 0) {
-            checkpoints.push(LibBarnStorage.Stake(block.timestamp, amount, block.timestamp, address(0)));
+            checkpoints.push(LibSupernovaStorage.Stake(block.timestamp, amount, block.timestamp, address(0)));
         } else {
-            LibBarnStorage.Stake storage old = checkpoints[checkpoints.length - 1];
+            LibSupernovaStorage.Stake storage old = checkpoints[checkpoints.length - 1];
 
             if (old.timestamp == block.timestamp) {
                 old.amount = amount;
             } else {
-                checkpoints.push(LibBarnStorage.Stake(block.timestamp, amount, old.expiryTimestamp, old.delegatedTo));
+                checkpoints.push(LibSupernovaStorage.Stake(block.timestamp, amount, old.expiryTimestamp, old.delegatedTo));
             }
         }
     }
@@ -329,11 +329,11 @@ contract BarnFacet {
     // _updateUserLock updates the expiry timestamp on the user's stake
     // it assumes that if the user already has a balance, which is checked for in the lock function
     // then there must be at least 1 checkpoint
-    function _updateUserLock(LibBarnStorage.Stake[] storage checkpoints, uint256 expiryTimestamp) internal {
-        LibBarnStorage.Stake storage old = checkpoints[checkpoints.length - 1];
+    function _updateUserLock(LibSupernovaStorage.Stake[] storage checkpoints, uint256 expiryTimestamp) internal {
+        LibSupernovaStorage.Stake storage old = checkpoints[checkpoints.length - 1];
 
         if (old.timestamp < block.timestamp) {
-            checkpoints.push(LibBarnStorage.Stake(block.timestamp, old.amount, expiryTimestamp, old.delegatedTo));
+            checkpoints.push(LibSupernovaStorage.Stake(block.timestamp, old.amount, expiryTimestamp, old.delegatedTo));
         } else {
             old.expiryTimestamp = expiryTimestamp;
         }
@@ -342,34 +342,34 @@ contract BarnFacet {
     // _updateUserDelegatedTo updates the delegateTo property on the user's stake
     // it assumes that if the user already has a balance, which is checked for in the delegate function
     // then there must be at least 1 checkpoint
-    function _updateUserDelegatedTo(LibBarnStorage.Stake[] storage checkpoints, address to) internal {
-        LibBarnStorage.Stake storage old = checkpoints[checkpoints.length - 1];
+    function _updateUserDelegatedTo(LibSupernovaStorage.Stake[] storage checkpoints, address to) internal {
+        LibSupernovaStorage.Stake storage old = checkpoints[checkpoints.length - 1];
 
         if (old.timestamp < block.timestamp) {
-            checkpoints.push(LibBarnStorage.Stake(block.timestamp, old.amount, old.expiryTimestamp, to));
+            checkpoints.push(LibSupernovaStorage.Stake(block.timestamp, old.amount, old.expiryTimestamp, to));
         } else {
             old.delegatedTo = to;
         }
     }
 
     // _updateDelegatedPower updates the power delegated TO the user in the checkpoints history
-    function _updateDelegatedPower(LibBarnStorage.Checkpoint[] storage checkpoints, uint256 amount) internal {
+    function _updateDelegatedPower(LibSupernovaStorage.Checkpoint[] storage checkpoints, uint256 amount) internal {
         if (checkpoints.length == 0 || checkpoints[checkpoints.length - 1].timestamp < block.timestamp) {
-            checkpoints.push(LibBarnStorage.Checkpoint(block.timestamp, amount));
+            checkpoints.push(LibSupernovaStorage.Checkpoint(block.timestamp, amount));
         } else {
-            LibBarnStorage.Checkpoint storage old = checkpoints[checkpoints.length - 1];
+            LibSupernovaStorage.Checkpoint storage old = checkpoints[checkpoints.length - 1];
             old.amount = amount;
         }
     }
 
     // _updateLockedBond stores the new `amount` into the BOND locked history
     function _updateLockedBond(uint256 amount) internal {
-        LibBarnStorage.Storage storage ds = LibBarnStorage.barnStorage();
+        LibSupernovaStorage.Storage storage ds = LibSupernovaStorage.supernovaStorage();
 
         if (ds.bondStakedHistory.length == 0 || ds.bondStakedHistory[ds.bondStakedHistory.length - 1].timestamp < block.timestamp) {
-            ds.bondStakedHistory.push(LibBarnStorage.Checkpoint(block.timestamp, amount));
+            ds.bondStakedHistory.push(LibSupernovaStorage.Checkpoint(block.timestamp, amount));
         } else {
-            LibBarnStorage.Checkpoint storage old = ds.bondStakedHistory[ds.bondStakedHistory.length - 1];
+            LibSupernovaStorage.Checkpoint storage old = ds.bondStakedHistory[ds.bondStakedHistory.length - 1];
             old.amount = amount;
         }
     }
