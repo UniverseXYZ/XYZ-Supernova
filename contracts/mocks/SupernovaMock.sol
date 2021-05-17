@@ -5,7 +5,7 @@ import "../interfaces/IRewards.sol";
 
 contract SupernovaMock {
     IRewards public r;
-    uint256 public bondStaked;
+    uint256 public xyzStaked;
     mapping(address => uint256) private balances;
 
     function setRewards(address rewards) public {
@@ -20,7 +20,7 @@ contract SupernovaMock {
         callRegisterUserAction(user);
 
         balances[user] = balances[user] + amount;
-        bondStaked = bondStaked + amount;
+        xyzStaked = xyzStaked + amount;
     }
 
     function withdraw(address user, uint256 amount) public {
@@ -29,7 +29,7 @@ contract SupernovaMock {
         callRegisterUserAction(user);
 
         balances[user] = balances[user] - amount;
-        bondStaked = bondStaked - amount;
+        xyzStaked = xyzStaked - amount;
     }
 
     function balanceOf(address user) public view returns (uint256) {

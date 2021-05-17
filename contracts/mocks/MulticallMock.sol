@@ -9,15 +9,15 @@ contract MulticallMock {
     using SafeMath for uint256;
 
     ISupernova supernova;
-    IERC20 bond;
+    IERC20 xyz;
 
-    constructor(address _supernova, address _bond) {
+    constructor(address _supernova, address _xyz) {
         supernova = ISupernova(_supernova);
-        bond = IERC20(_bond);
+        xyz = IERC20(_xyz);
     }
 
     function multiDelegate(uint256 amount, address user1, address user2) public {
-        bond.approve(address(supernova), amount);
+        xyz.approve(address(supernova), amount);
 
         supernova.deposit(amount);
         supernova.delegate(user1);
@@ -26,7 +26,7 @@ contract MulticallMock {
     }
 
     function multiDeposit(uint256 amount) public {
-        bond.approve(address(supernova), amount.mul(3));
+        xyz.approve(address(supernova), amount.mul(3));
 
         supernova.deposit(amount);
         supernova.deposit(amount);

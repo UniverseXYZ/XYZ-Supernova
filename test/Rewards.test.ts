@@ -11,7 +11,7 @@ const zeroAddress = '0x0000000000000000000000000000000000000000';
 describe('Rewards', function () {
     const amount = BigNumber.from(100).mul(BigNumber.from(10).pow(18));
 
-    let supernova: SupernovaMock, bond: Erc20Mock, rewards: Rewards;
+    let supernova: SupernovaMock, xyz: Erc20Mock, rewards: Rewards;
 
     let user: Signer, userAddress: string;
     let happyPirate: Signer, happyPirateAddress: string;
@@ -24,7 +24,7 @@ describe('Rewards', function () {
     let snapshotTs: number;
 
     before(async function () {
-        bond = (await deploy.deployContract('ERC20Mock')) as Erc20Mock;
+        xyz = (await deploy.deployContract('ERC20Mock')) as Erc20Mock;
 
         await setupSigners();
         await setupContracts();
@@ -33,7 +33,7 @@ describe('Rewards', function () {
 
         rewards = (await deploy.deployContract(
             'Rewards',
-            [await treasury.getAddress(), bond.address, supernova.address])
+            [await treasury.getAddress(), xyz.address, supernova.address])
         ) as Rewards;
 
         await supernova.setRewards(rewards.address);
@@ -144,7 +144,7 @@ describe('Rewards', function () {
         it('calculates the new multiplier when funds are added', async function () {
             expect(await rewards.currentMultiplier()).to.equal(0);
 
-            await bond.mint(rewards.address, amount);
+            await xyz.mint(rewards.address, amount);
             await supernova.deposit(happyPirateAddress, amount);
 
             await expect(rewards.ackFunds()).to.not.be.reverted;
@@ -152,7 +152,7 @@ describe('Rewards', function () {
             expect(await rewards.currentMultiplier()).to.equal(helpers.tenPow18);
             expect(await rewards.balanceBefore()).to.equal(amount);
 
-            await bond.mint(rewards.address, amount);
+            await xyz.mint(rewards.address, amount);
 
             await expect(rewards.ackFunds()).to.not.be.reverted;
             expect(await rewards.currentMultiplier()).to.equal(helpers.tenPow18.mul(2));
@@ -160,20 +160,20 @@ describe('Rewards', function () {
         });
 
         it('does not change multiplier on funds balance decrease but changes balance', async function () {
-            await bond.mint(rewards.address, amount);
+            await xyz.mint(rewards.address, amount);
             await supernova.deposit(happyPirateAddress, amount);
 
             await expect(rewards.ackFunds()).to.not.be.reverted;
             expect(await rewards.currentMultiplier()).to.equal(helpers.tenPow18);
             expect(await rewards.balanceBefore()).to.equal(amount);
 
-            await bond.burnFrom(rewards.address, amount.div(2));
+            await xyz.burnFrom(rewards.address, amount.div(2));
 
             await expect(rewards.ackFunds()).to.not.be.reverted;
             expect(await rewards.currentMultiplier()).to.equal(helpers.tenPow18);
             expect(await rewards.balanceBefore()).to.equal(amount.div(2));
 
-            await bond.mint(rewards.address, amount.div(2));
+            await xyz.mint(rewards.address, amount.div(2));
             await rewards.ackFunds();
 
             // 1 + 50 / 100 = 1.5
@@ -191,12 +191,12 @@ describe('Rewards', function () {
             await expect(supernova.callRegisterUserAction(happyPirateAddress)).to.not.be.reverted;
         });
 
-        it('does not pull bond if function is disabled', async function () {
+        it('does not pull xyz if function is disabled', async function () {
             await supernova.callRegisterUserAction(happyPirateAddress);
 
-            expect(await bond.balanceOf(rewards.address)).to.equal(0);
+            expect(await xyz.balanceOf(rewards.address)).to.equal(0);
 
-            await bond.connect(communityVault).approve(rewards.address, amount);
+            await xyz.connect(communityVault).approve(rewards.address, amount);
 
             const startAt = await helpers.getLatestBlockTimestamp();
             const endsAt = startAt + 60 * 60 * 24 * 7;
@@ -207,36 +207,36 @@ describe('Rewards', function () {
             await supernova.callRegisterUserAction(happyPirateAddress);
 
             // total time is 7 days & total amount is 100  => 1 day worth of rewards ~14.28
-            const balance = await bond.balanceOf(rewards.address);
+            const balance = await xyz.balanceOf(rewards.address);
             expect(balance.gt(BigNumber.from(14).mul(helpers.tenPow18))).to.be.true;
             expect(balance.lt(BigNumber.from(15).mul(helpers.tenPow18))).to.be.true;
         });
 
-        it('does not pull bond if already pulled everything', async function () {
+        it('does not pull xyz if already pulled everything', async function () {
             const { start, end } = await setupRewards();
 
             await helpers.moveAtTimestamp(end + 1 * time.day);
 
             await supernova.callRegisterUserAction(happyPirateAddress);
 
-            expect(await bond.balanceOf(rewards.address)).to.equal(amount);
+            expect(await xyz.balanceOf(rewards.address)).to.equal(amount);
 
             await helpers.moveAtTimestamp(end + 1 * time.day);
             await supernova.callRegisterUserAction(happyPirateAddress);
 
-            expect(await bond.balanceOf(rewards.address)).to.equal(amount);
+            expect(await xyz.balanceOf(rewards.address)).to.equal(amount);
         });
 
         it('updates the amount owed to user but does not send funds', async function () {
-            await bond.connect(communityVault).approve(rewards.address, amount);
+            await xyz.connect(communityVault).approve(rewards.address, amount);
 
             await supernova.deposit(happyPirateAddress, amount);
 
             await helpers.moveAtTimestamp(defaultStartAt + time.day);
 
-            expect(await bond.balanceOf(happyPirateAddress)).to.equal(0);
+            expect(await xyz.balanceOf(happyPirateAddress)).to.equal(0);
 
-            const balance = await bond.balanceOf(rewards.address);
+            const balance = await xyz.balanceOf(rewards.address);
             expect(balance.gte(0)).to.be.true;
             expect(await rewards.owed(happyPirateAddress)).to.equal(balance);
         });
@@ -262,8 +262,8 @@ describe('Rewards', function () {
 
             const expectedBalance2 = calcTotalReward(depositTs, claimTs, end - start, amount);
 
-            expect(await bond.transferCalled()).to.be.true;
-            expect(await bond.balanceOf(happyPirateAddress)).to.be.equal(expectedBalance1.add(expectedBalance2));
+            expect(await xyz.transferCalled()).to.be.true;
+            expect(await xyz.balanceOf(happyPirateAddress)).to.be.equal(expectedBalance1.add(expectedBalance2));
             expect(await rewards.owed(happyPirateAddress)).to.be.equal(0);
             expect(await rewards.balanceBefore()).to.be.equal(0);
         });
@@ -275,19 +275,19 @@ describe('Rewards', function () {
             const deposit1Ts = await helpers.getLatestBlockTimestamp();
             const expectedBalance1 = calcTotalReward(start, deposit1Ts, end - start, amount);
 
-            expect(await bond.balanceOf(rewards.address)).to.equal(expectedBalance1);
+            expect(await xyz.balanceOf(rewards.address)).to.equal(expectedBalance1);
 
             await supernova.deposit(flyingParrotAddress, amount);
             const deposit2Ts = await helpers.getLatestBlockTimestamp();
             const expectedBalance2 = calcTotalReward(deposit1Ts, deposit2Ts, end - start, amount);
 
-            expect(await bond.balanceOf(rewards.address)).to.equal(expectedBalance1.add(expectedBalance2));
+            expect(await xyz.balanceOf(rewards.address)).to.equal(expectedBalance1.add(expectedBalance2));
 
             await supernova.deposit(userAddress, amount);
             const deposit3Ts = await helpers.getLatestBlockTimestamp();
             const expectedBalance3 = calcTotalReward(deposit2Ts, deposit3Ts, end - start, amount);
 
-            expect(await bond.balanceOf(rewards.address))
+            expect(await xyz.balanceOf(rewards.address))
                 .to.equal(expectedBalance1.add(expectedBalance2).add(expectedBalance3));
 
             await helpers.moveAtTimestamp(start + 10 * time.day);
@@ -296,7 +296,7 @@ describe('Rewards', function () {
             const multiplier = await rewards.currentMultiplier();
             const expectedReward = multiplier.mul(amount).div(helpers.tenPow18);
 
-            expect(await bond.balanceOf(happyPirateAddress)).to.equal(expectedReward);
+            expect(await xyz.balanceOf(happyPirateAddress)).to.equal(expectedReward);
         });
 
         it('works fine after claim', async function () {
@@ -306,20 +306,20 @@ describe('Rewards', function () {
             const deposit1Ts = await helpers.getLatestBlockTimestamp();
             const expectedBalance1 = calcTotalReward(start, deposit1Ts, end - start, amount);
 
-            expect(await bond.balanceOf(rewards.address)).to.equal(expectedBalance1);
+            expect(await xyz.balanceOf(rewards.address)).to.equal(expectedBalance1);
 
             await supernova.deposit(flyingParrotAddress, amount);
             const deposit2Ts = await helpers.getLatestBlockTimestamp();
             const multiplierAtDeposit2 = await rewards.currentMultiplier();
             const expectedBalance2 = calcTotalReward(deposit1Ts, deposit2Ts, end - start, amount);
 
-            expect(await bond.balanceOf(rewards.address)).to.equal(expectedBalance1.add(expectedBalance2));
+            expect(await xyz.balanceOf(rewards.address)).to.equal(expectedBalance1.add(expectedBalance2));
 
             await supernova.deposit(userAddress, amount);
             const deposit3Ts = await helpers.getLatestBlockTimestamp();
             const expectedBalance3 = calcTotalReward(deposit2Ts, deposit3Ts, end - start, amount);
 
-            expect(await bond.balanceOf(rewards.address))
+            expect(await xyz.balanceOf(rewards.address))
                 .to.equal(expectedBalance1.add(expectedBalance2).add(expectedBalance3));
 
             await helpers.moveAtTimestamp(start + 1 * time.day);
@@ -329,7 +329,7 @@ describe('Rewards', function () {
             const claim1Multiplier = await rewards.currentMultiplier();
             const expectedReward = claim1Multiplier.mul(amount).div(helpers.tenPow18);
 
-            expect(await bond.balanceOf(happyPirateAddress)).to.equal(expectedReward);
+            expect(await xyz.balanceOf(happyPirateAddress)).to.equal(expectedReward);
 
             // after the first claim is executed, move 1 more day into the future which would increase the
             // total reward by ~14.28 (one day worth of reward)
@@ -352,7 +352,7 @@ describe('Rewards', function () {
                 expectedReward2.gt(BigNumber.from(4).mul(helpers.tenPow18)) &&
                 expectedReward2.lt(BigNumber.from(5).mul(helpers.tenPow18))
             ).to.be.true;
-            expect(await bond.balanceOf(happyPirateAddress)).to.equal(expectedReward.add(expectedReward2));
+            expect(await xyz.balanceOf(happyPirateAddress)).to.equal(expectedReward.add(expectedReward2));
 
             await rewards.connect(flyingParrot).claim();
             const multiplier3 = await rewards.currentMultiplier();
@@ -360,7 +360,7 @@ describe('Rewards', function () {
             expect(
                 expectedReward3.gt(BigNumber.from(9).mul(helpers.tenPow18)) &&
                 expectedReward3.lt(BigNumber.from(10).mul(helpers.tenPow18))).to.be.true;
-            expect(await bond.balanceOf(flyingParrotAddress)).to.equal(expectedReward3);
+            expect(await xyz.balanceOf(flyingParrotAddress)).to.equal(expectedReward3);
         });
     });
 
@@ -368,7 +368,7 @@ describe('Rewards', function () {
         const startAt = await helpers.getLatestBlockTimestamp();
         const endsAt = startAt + 60 * 60 * 24 * 7;
         await rewards.connect(treasury).setupPullToken(await communityVault.getAddress(), startAt, endsAt, amount);
-        await bond.connect(communityVault).approve(rewards.address, amount);
+        await xyz.connect(communityVault).approve(rewards.address, amount);
 
         return { start: startAt, end: endsAt };
     }
@@ -384,8 +384,8 @@ describe('Rewards', function () {
         const cvValue = BigNumber.from(2800000).mul(helpers.tenPow18);
         const treasuryValue = BigNumber.from(4500000).mul(helpers.tenPow18);
 
-        await bond.mint(await communityVault.getAddress(), cvValue);
-        await bond.mint(await treasury.getAddress(), treasuryValue);
+        await xyz.mint(await communityVault.getAddress(), cvValue);
+        await xyz.mint(await treasury.getAddress(), treasuryValue);
     }
 
     async function setupSigners () {

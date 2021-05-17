@@ -6,7 +6,7 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "../interfaces/IRewards.sol";
 
 library LibSupernovaStorage {
-    bytes32 constant STORAGE_POSITION = keccak256("com.supernovabridge.supernova.storage");
+    bytes32 constant STORAGE_POSITION = keccak256("com.xyzdao.supernova.storage");
 
     struct Checkpoint {
         uint256 timestamp;
@@ -27,15 +27,15 @@ library LibSupernovaStorage {
         // every user action creates a new object in the history
         mapping(address => Stake[]) userStakeHistory;
 
-        // array of bond staked Checkpoint
+        // array of xyz staked Checkpoint
         // deposits/withdrawals create a new object in the history (max one per block)
-        Checkpoint[] bondStakedHistory;
+        Checkpoint[] xyzStakedHistory;
 
         // mapping of user address to history of delegated power
         // every delegate/stopDelegate call create a new checkpoint (max one per block)
         mapping(address => Checkpoint[]) delegatedPowerHistory;
 
-        IERC20 bond;
+        IERC20 xyz;
         IRewards rewards;
     }
 

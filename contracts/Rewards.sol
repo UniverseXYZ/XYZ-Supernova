@@ -84,15 +84,15 @@ contract Rewards is Ownable {
             return;
         }
 
-        uint256 totalStakedBond = supernova.bondStaked();
-        // if there's no bond staked, it doesn't make sense to ackFunds because there's nobody to distribute them to
+        uint256 totalStakedXyz = supernova.xyzStaked();
+        // if there's no xyz staked, it doesn't make sense to ackFunds because there's nobody to distribute them to
         // and the calculation would fail anyways due to division by 0
-        if (totalStakedBond == 0) {
+        if (totalStakedXyz == 0) {
             return;
         }
 
         uint256 diff = balanceNow.sub(balanceBefore);
-        uint256 multiplier = currentMultiplier.add(diff.mul(decimals).div(totalStakedBond));
+        uint256 multiplier = currentMultiplier.add(diff.mul(decimals).div(totalStakedXyz));
 
         balanceBefore = balanceNow;
         currentMultiplier = multiplier;
