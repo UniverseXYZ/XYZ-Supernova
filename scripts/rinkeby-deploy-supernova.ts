@@ -13,11 +13,11 @@ const facetAddresses = new Map([
 
 const _xyz = '0x86dEddCFc3a7DBeE68cDADA65Eed3D3b70F4fe24';
 const _owner = '0x39aE4d18f1feb3708CaCCC39F1Af3e8C26D577d5';
-const _dao = '0x5131D4f8B1D5Fa3f50E139eE3E545d5e8C2Bf731';
+const _dao = '0x52eea6822627819416531D4C0B221AE52652938a';
 
 // needed for rewards setup
 const _cv = '0x3317cc09ce0da6751b4E0b7c56114bA833D3d232';
-const startTs = 1620302354;
+const startTs = 1621337400;
 const endTs = 1642982400;
 const rewardsAmount = BigNumber.from(60000).mul(helpers.tenPow18);
 
@@ -39,7 +39,7 @@ async function main () {
     );
     console.log(`Supernova deployed at: ${diamond.address}`);
 
-    const rewards = await deploy.deployContract('Rewards', [_dao, _xyz, diamond.address]);
+    const rewards = await deploy.deployContract('Rewards', [_owner, _xyz, diamond.address]);
     console.log(`Rewards deployed at: ${rewards.address}`);
 
     console.log('Calling initSupernova');

@@ -131,7 +131,7 @@ contract Rewards is Ownable {
         }
     }
 
-    // setSupernova sets the address of the Kek Supernova into the state variable
+    // setSupernova sets the address of the UniversXYZ Supernova into the state variable
     function setSupernova(address _supernova) public {
         require(_supernova != address(0), 'supernova address must not be 0x0');
         require(msg.sender == owner(), '!owner');
