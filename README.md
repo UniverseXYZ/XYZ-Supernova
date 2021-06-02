@@ -30,7 +30,6 @@ where:
 3. update the oldUserMultiplier with the current multiplier -- signaling that we already calculated how much was owed to the user since his last action
 
 ## Smart Contract Architecture
-Overview
 UniverseXYZ Supernova is a fork of BarnBridge Barn. It shares the same architecture:
 
 ![dao sc architecture](https://user-images.githubusercontent.com/4047772/120464398-8c8cf400-c3a5-11eb-8cb8-a105eeaaa9e9.png)
