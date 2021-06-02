@@ -1,5 +1,5 @@
 {
-  "name": "kek-dao",
+  "name": "xyz-dao",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
@@ -14,7 +14,7 @@
     "lint:ts:fix": "eslint . --ext .ts --fix",
     "lint:sol": "solhint --max-warnings 0 \"contracts/**/*.sol\""
   },
-  "author": "kek-dao",
+  "author": "xyz-dao",
   "license": "Apache-2",
   "devDependencies": {
     "@nomiclabs/hardhat-ethers": "^2.0.0",
